@@ -1,7 +1,7 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import type { ReactNode, VFC, FC } from "react"
 import type { I18n, MessageDescriptor } from "@lingui/core"
-import type { TransRenderCallbackOrComponent } from "@lingui/react"
+import type { I18nContext, TransRenderCallbackOrComponent } from "@lingui/react"
 
 export type ChoiceOptions = {
   /** Offset of value when calculating plural forms */
@@ -248,6 +248,19 @@ type SelectChoiceProps = {
   other: ReactNode
   [option: `_${string}`]: ReactNode
 } & CommonProps
+
+/**
+ * Translates a template string using the global I18n instance
+ *
+ * @example
+ * ```
+ * import { t } from "@lingui/macro";
+ * const message = t`Hello ${name}`;
+ * ```
+ */
+export function useLingui(): I18nContext & {
+  _: (literals: TemplateStringsArray, ...placeholders: any[]) => string
+}
 
 /**
  * Trans is the basic macro for static messages,

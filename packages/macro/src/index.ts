@@ -23,6 +23,7 @@ const jsMacroTags = new Set([
   "msg",
   "arg",
   "t",
+  "useLingui",
   "plural",
   "select",
   "selectOrdinal",
@@ -55,6 +56,7 @@ function macro({ references, state, babel, config }: MacroParams) {
   const jsxNodes = new Set<NodePath>()
   const jsNodes = new Set<NodePath>()
   let needsI18nImport = false
+  let needsUseLinguiImport = false
 
   let nameMap = new Map<string, string>()
   Object.keys(references).forEach((tagName) => {
@@ -92,6 +94,8 @@ function macro({ references, state, babel, config }: MacroParams) {
       nameMap,
     })
     try {
+      if (babel.types.isIdentifier(path.node) && path.node.name === "useLingui")
+        needsUseLinguiImport = true
       if (macro.replacePath(path)) needsI18nImport = true
     } catch (e) {
       reportUnsupportedSyntax(path, e as Error)
@@ -109,6 +113,10 @@ function macro({ references, state, babel, config }: MacroParams) {
       reportUnsupportedSyntax(path, e as Error)
     }
   })
+
+  if (needsUseLinguiImport) {
+    addImport(babel, state, "@lingui/react", "useLingui")
+  }
 
   if (needsI18nImport) {
     addImport(babel, state, i18nImportModule, i18nImportName)

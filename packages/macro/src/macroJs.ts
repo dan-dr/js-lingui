@@ -151,6 +151,57 @@ export default class MacroJs {
       return true
     }
 
+    if (
+      this.types.isCallExpression(path.node) &&
+      this.isLinguiIdentifier(path.node.callee, "useLingui") &&
+      this.types.isVariableDeclarator(path.parentPath.node)
+    ) {
+      const varDec = path.parentPath.node
+      const _property = this.types.isObjectPattern(varDec.id)
+        ? varDec.id.properties.find(
+            (property): property is ObjectProperty & { value: Identifier } =>
+              this.types.isObjectProperty(property) &&
+              this.types.isIdentifier(property.key) &&
+              this.types.isIdentifier(property.value) &&
+              property.key.name == "_"
+          )
+        : null
+
+      // Enforce destructuring _ from useLingui macro to prevent misuse
+      if (!_property) {
+        throw new Error(
+          `Must destruct _ when using useLingui macro, i.e:
+const { _ } = useLingui()
+or
+const { _: t } = useLingui()`
+        )
+      }
+
+      const name = _property.value.name
+      path.scope.getBinding(name)?.referencePaths.forEach((refPath) => {
+        if (refPath.parentPath.isTaggedTemplateExpression()) {
+          const tt = this.tokenizeNode(refPath.parentPath.node)
+          this.replacePathWithMessage(refPath.parentPath, tt)
+          console.log(tt)
+          const tokens = this.tokenizeTemplateLiteral(
+            refPath.parentPath.node.quasi
+          )
+          const descriptor = this.createMessageDescriptorFromTokens(
+            tokens,
+            refPath.parentPath.node.loc
+          )
+
+          // const callExpr = this.types.callExpression(
+          // this.types.identifier(name),
+          // [descriptor]
+          // )
+
+          // refPath.parentPath.replaceWith(descriptor)
+        }
+      })
+      return false
+    }
+
     const tokens = this.tokenizeNode(path.node)
 
     this.replacePathWithMessage(path, tokens)
@@ -467,8 +518,10 @@ export default class MacroJs {
     return (
       this.types.isTaggedTemplateExpression(node) &&
       (this.isLinguiIdentifier(node.tag, "t") ||
+        this.isLinguiIdentifier(node.tag, "_") ||
         (this.types.isCallExpression(node.tag) &&
-          this.isLinguiIdentifier(node.tag.callee, "t")))
+          (this.isLinguiIdentifier(node.tag.callee, "t") ||
+            this.isLinguiIdentifier(node.tag.callee, "_"))))
     )
   }
 

@@ -199,6 +199,19 @@ declare module "@lingui/macro" {
   } & ChoiceOptions<string>
 
   /**
+   * Translates a template string using the global I18n instance
+   *
+   * @example
+   * ```
+   * import { t } from "@lingui/macro";
+   * const message = t`Hello ${name}`;
+   * ```
+   */
+  export function useLingui(): I18nContext & {
+    _: (literals: TemplateStringsArray, ...placeholders: any[]) => string
+  }
+
+  /**
    * The types should be changed after this PR is merged
    * https://github.com/Microsoft/TypeScript/pull/26797
    *
